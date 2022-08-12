@@ -1,0 +1,28 @@
+version: '2.1'
+orbs:
+  terraform: circleci/terraform@3.1
+workflows:
+  deploy_infrastructure:
+    jobs:
+      - terraform/fmt:
+          checkout: true
+          context: sanbox-context
+      - terraform/validate:
+          checkout: true
+          context: sanbox-context
+          requires:
+            - terraform/fmt
+      - terraform/plan:
+          checkout: true
+          context: sanbox-context
+          persist-workspace: true
+          requires:
+            - terraform/validate
+      - terraform/apply:
+          attach-workspace: true
+          context: sanbox-context
+          filters:
+            branches:
+              only: main
+          requires:
+            - terraform/plan
