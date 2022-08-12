@@ -1,5 +1,7 @@
 
-
+# AWS Credential
+variable "access_key" {}
+variable "secret_key" {}
 
 # AWS NETWORKS
 variable "main_vpc_cidr" {}
