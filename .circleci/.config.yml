@@ -9,6 +9,7 @@ workflows:
     - terraform/validate:
         checkout: true
         context: terraform
+        command: terraform init
     - terraform/plan:
         checkout: true
         context: terraform
