@@ -13,6 +13,32 @@ tags = {                                  # Tagging the VPC
   }
 }
 
+# CloudMap
+resource "aws_service_discovery_private_dns_namespace" "internal-dev" {
+  name        = "internal-dev.terraform.local"
+  description = "internal-dev Cloud Map"
+  vpc         = aws_vpc.main.id
+}
+
+resource "aws_service_discovery_service" "internal-dev" {
+  name = "internal-dev"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.internal-dev.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
 # IGW
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
@@ -56,7 +82,27 @@ resource "aws_s3_bucket" "development-alblogs" {
 
 resource "aws_s3_bucket_acl" "development-alblogs_bucket_acl" {
   bucket = aws_s3_bucket.development-alblogs.id
-  acl    = "log-delivery-write"
+  acl    = "private"
+}
+
+resource "aws_lb" "dev-mobile-bff-alb-01" {
+  name               = "dev-mobile-bff-alb-01"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.alb_sg.id}"]
+  subnets            = [aws_subnet.public_subnetA.id, aws_subnet.public_subnetB.id]
+
+  enable_deletion_protection = false
+
+  access_logs {
+    bucket  = aws_s3_bucket.development-alblogs.id
+    prefix  = "Development-alb"
+    enabled = false
+  }
+
+  tags = {
+    Environment = "Development-mobile-bff-alb"
+  }
 }
 
 resource "aws_security_group" "alb_sg" {
@@ -81,26 +127,6 @@ resource "aws_security_group" "alb_sg" {
 
   tags = {
     Name = "Development-mobile-bff-alb-security-group"
-  }
-}
-
-resource "aws_lb" "dev-mobile-bff-alb-01" {
-  name               = "dev-mobile-bff-alb-01"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = ["${aws_security_group.alb_sg.id}"]
-  subnets            = ["${aws_subnet.public_subnetA.id}", "${aws_subnet.public_subnetB.id}"]
-
-  enable_deletion_protection = false
-
-  access_logs {
-    bucket  = aws_s3_bucket.development-alblogs.id
-    prefix  = "Development-alb"
-    enabled = false
-  }
-
-  tags = {
-    Environment = "Development-mobile-bff-alb"
   }
 }
 
