@@ -3,8 +3,6 @@ resource "aws_ecs_service" "bffMobileService" {
   cluster         = aws_ecs_cluster.bffMobileClusterDev.id
   task_definition = aws_ecs_task_definition.bffMobileService.arn
   desired_count   = 1
-  iam_role        = aws_iam_role.ecs_task_role.arn
-  depends_on      = [aws_iam_role.ecs_task_execution_role]
 
   ordered_placement_strategy {
     type  = "binpack"
