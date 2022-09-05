@@ -4,21 +4,21 @@ provider "aws" {
 #    secret_key = var.secret_key
 }
 
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "3.14.0"
-
-  name = var.vpc_name
-  cidr = var.main_vpc_cidr
-
-  azs             = var.vpc_azs
-  private_subnets = var.vpc_private_subnets
-  public_subnets  = var.vpc_public_subnets
-
-  #enable_nat_gateway = var.vpc_enable_nat_gateway
-
-  tags = var.vpc_tags
-}
+#module "vpc" {
+#  source  = "terraform-aws-modules/vpc/aws"
+#  version = "3.14.0"
+#
+#  name = var.vpc_name
+#  cidr = var.main_vpc_cidr
+#
+#  azs             = var.vpc_azs
+#  private_subnets = var.vpc_private_subnets
+#  public_subnets  = var.vpc_public_subnets
+#
+#  #enable_nat_gateway = var.vpc_enable_nat_gateway
+#
+#  tags = var.vpc_tags
+#}
 
 ## Create the VPC
 resource "aws_vpc" "main" {                # Creating VPC here
@@ -36,7 +36,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_subnet" "public_subnetA" {
-  vpc_id     = module.vpc.name
+  vpc_id     = aws_vpc.main.id
   availability_zone = data.aws_availability_zones.available.names[0]
   cidr_block = var.public_subnetA
 
@@ -46,7 +46,7 @@ resource "aws_subnet" "public_subnetA" {
 }
 
 resource "aws_subnet" "public_subnetB" {
-  vpc_id     = module.vpc.name
+  vpc_id     = aws_vpc.main.id
   availability_zone = data.aws_availability_zones.available.names[1]
   cidr_block = var.public_subnetB
 
@@ -67,7 +67,7 @@ resource "aws_s3_bucket" "development-alblogs" {
 resource "aws_security_group" "alb_sg" {
   name        = "alb_security_group"
   description = "Development-mobile-bff-alb-security-group"
-  vpc_id      = module.vpc.name
+  vpc_id      = aws_vpc.main.id 
 
   ingress {
     description      = "TLS from VPC"
@@ -94,8 +94,8 @@ resource "aws_lb" "dev-mobile-bff-alb-01" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = ["${aws_security_group.alb_sg.id}"]
-  subnets            = module.vpc.public_subnets[*]
-#  subnets            = ["${aws_subnet.public_subnetB.id}", "${aws_subnet.public_subnetB.id}"]
+#  subnets            = module.vpc.public_subnets[*]
+  subnets            = ["${aws_subnet.public_subnetA.id}", "${aws_subnet.public_subnetB.id}"]
 
   enable_deletion_protection = false
 
